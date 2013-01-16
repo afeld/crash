@@ -61,12 +61,24 @@ var getNearbyFriends = function(user, callback){
     access_token_secret: user.accessTokenSecret
   });
 
-  twit.get('/friends/list.json', {include_user_entities: true}, callback);
+  // TODO _getUsingCursor
+  // TODO followers/list
+  twit.get('/friends/list.json', {include_user_entities: true}, function(err, data){
+    if (err){
+      callback(err);
+    } else {
+      var nearby = data.users.filter(function(friend){
+        // TODO also check friend.status.coordinates and friend.status.place.bounding_box
+        return (/NY/).test(friend.location);
+      });
+
+      callback(null, nearby);
+    }
+  });
 };
 
 
 app.get('/', function(req, res){
-  // res.json(req.user);
   getNearbyFriends(req.user, function(err, data){
     res.json(err || data);
   });
