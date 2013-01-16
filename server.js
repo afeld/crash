@@ -1,5 +1,6 @@
 var express = require('express'),
-  everyauth = require('everyauth');
+  everyauth = require('everyauth'),
+  twitter = require('ntwitter');
 
 var app = express();
 
@@ -12,41 +13,69 @@ everyauth.everymodule.findUserById(function(userId, callback){
     callback(null, users[userId]);
   });
 
-app.configure(function(){
-  var twitterKey = process.env.CRASH_TWITTER_KEY,
-    twitterSecret = process.env.CRASH_TWITTER_SECRET;
 
-  if (!twitterKey){
-    throw new Error("must set CRASH_TWITTER_KEY");
-  }
-  if (!twitterSecret){
-    throw new Error("must set CRASH_TWITTER_SECRET");
-  }
+var twitterKey = process.env.CRASH_TWITTER_KEY,
+  twitterSecret = process.env.CRASH_TWITTER_SECRET;
 
-  everyauth.twitter
-    .consumerKey(twitterKey)
-    .consumerSecret(twitterSecret)
-    .findOrCreateUser(function(session, accessToken, accessTokenSecret, twitterUserMetadata){
-      users[twitterUserMetadata.id] = twitterUserMetadata;
-      return twitterUserMetadata;
-    })
-    .redirectPath('/');
-});
+if (!twitterKey){
+  throw new Error("must set CRASH_TWITTER_KEY");
+}
+if (!twitterSecret){
+  throw new Error("must set CRASH_TWITTER_SECRET");
+}
+
+everyauth.twitter
+  .consumerKey(twitterKey)
+  .consumerSecret(twitterSecret)
+  .findOrCreateUser(function(session, accessToken, accessTokenSecret, twitterUserMetadata){
+    var user = twitterUserMetadata;
+    user.accessToken = accessToken;
+    user.accessTokenSecret = accessTokenSecret;
+
+    users[user.id] = user;
+    return user;
+  })
+  .redirectPath('/');
 
 
 app.use(express.bodyParser());
 app.use(express.cookieParser());
 app.use(express.session({secret: 'mr ripley'}));
 app.use(everyauth.middleware());
+app.use(function(req, res, next){
+  // require the user to be logged in
+  if (!req.user){
+    res.redirect('/auth/twitter');
+    // TODO eventually send back to original URL
+  } else {
+    next();
+  }
+});
+
+
+var getNearbyFriends = function(user, callback){
+  var twit = new twitter({
+    consumer_key: twitterKey,
+    consumer_secret: twitterSecret,
+    access_token_key: user.accessToken,
+    access_token_secret: user.accessTokenSecret
+  });
+
+  twit.get('/friends/list.json', {include_user_entities: true}, callback);
+};
 
 
 app.get('/', function(req, res){
-  var user = req.user;
-  if (user){
-    res.json(req.user);  
-  } else {
-    res.redirect('/auth/twitter');
-  }
+  // res.json(req.user);
+  getNearbyFriends(req.user, function(err, data){
+    res.json(err || data);
+  });
+});
+
+app.get('/friends/nearby.json', function(req, res){
+  getNearbyFriends(req.user, function(err, data){
+    res.json(err || data);
+  });
 });
 
 
