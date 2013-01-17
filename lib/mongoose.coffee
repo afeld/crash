@@ -1,12 +1,13 @@
 mongoose = require 'mongoose'
-app = require './app'
 
 
-app.configure 'development', ->
-  mongoose.connect 'localhost', 'crash_dev'
-
-app.configure 'test', ->
-  mongoose.connect 'localhost', 'crash_test'
+switch process.env.NODE_ENV
+  when undefined, 'development'
+    mongoose.connect 'localhost', 'crash_dev'
+  when 'test'
+    mongoose.connect 'localhost', 'crash_test'
+  when 'production'
+    throw new Error "mongo needs to be configured"
 
 
 module.exports = mongoose
