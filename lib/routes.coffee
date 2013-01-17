@@ -1,4 +1,4 @@
-users = require './users'
+users = require './finder'
 
 
 module.exports = (app) ->
