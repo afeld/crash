@@ -16,7 +16,6 @@ everyauth.twitter
     user.accessToken = accessToken
     user.accessTokenSecret = accessTokenSecret
 
-    # TODO save users elsewhere
     db.users.insert(user)
     user
   .redirectPath('/')

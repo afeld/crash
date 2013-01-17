@@ -6,11 +6,16 @@
   "dependencies": {
     "everyauth": "~0.3.1",
     "express": "~3.0.6",
+    "mongoose": "~3.5.4",
+    "mongoose-timestamp": "~0.1.0",
     "ntwitter": "~0.5.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "coffee-script": "1.4.0",
+    "mocha": "~1.8.1"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "NODE_ENV=test mocha --compilers coffee:coffee-script",
     "start": "node server.js"
   },
   "repository": "",
